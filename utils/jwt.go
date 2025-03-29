@@ -54,3 +54,12 @@ func VerifyJWT(token string) (jwt.MapClaims, error) {
 
 	return nil, errors.New("invalid token")
 }
+
+func GetUsernameFromToken(token string) (string, error) {
+	claims, err := VerifyJWT(token)
+	if err != nil {
+		return "", err
+	}
+
+	return claims["username"].(string), nil
+}

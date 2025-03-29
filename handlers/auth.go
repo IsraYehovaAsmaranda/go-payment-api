@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -14,59 +13,72 @@ import (
 )
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	var newUser models.User
+	var registerRequest models.RegisterRequest
 
-	err := json.NewDecoder(r.Body).Decode(&newUser)
+	err := json.NewDecoder(r.Body).Decode(&registerRequest)
 	if err != nil {
+		utils.SaveActivityLog("Register Failed - Invalid Request", models.User{})
 		helpers.RespondWithError(w, http.StatusBadRequest, err.Error(), "Invalid Request")
 		return
 	}
 
-	users, err := readUsersFromJson()
+	users, err := models.ReadUsersFromJson()
 	if err != nil {
+		utils.SaveActivityLog("Register Failed - Failed to register user", models.User{})
 		helpers.RespondWithError(w, http.StatusInternalServerError, err.Error(), "Failed to register user")
 		return
 	}
 
 	for _, user := range users.Data {
-		if user.Username == newUser.Username {
+		if user.Username == registerRequest.Username {
+			utils.SaveActivityLog("Register Failed - Username already exists", models.User{})
 			helpers.RespondWithError(w, http.StatusBadRequest, "Username already exists", "Username already exists")
 			return
 		}
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerRequest.Password), bcrypt.DefaultCost)
 	if err != nil {
-		helpers.RespondWithError(w, http.StatusInternalServerError, err.Error(), "Failed to register user")
+		utils.SaveActivityLog("Register Failed - Failed to encrypt password", models.User{})
+		helpers.RespondWithError(w, http.StatusInternalServerError, err.Error(), "Failed encrypt password")
 		return
 	}
 
-	newUser.Password = string(hashedPassword)
-
+	var newUser models.User = models.User{
+		Username: registerRequest.Username,
+		Name:     registerRequest.Name,
+		Password: string(hashedPassword),
+		Balance:  0,
+	}
 	users.Data = append(users.Data, newUser)
 
-	err = saveUsersToJson(users)
+	err = models.SaveUsersToJson(users)
 	if err != nil {
+		utils.SaveActivityLog("Register Failed - Failed to register user", models.User{})
 		helpers.RespondWithError(w, http.StatusInternalServerError, err.Error(), "Failed to register user")
 		return
 	}
 
 	response := models.RegisterResponse{
-		Username: newUser.Username,
-		Name:     newUser.Name,
+		Username: registerRequest.Username,
+		Name:     registerRequest.Name,
 	}
+
+	utils.SaveActivityLog("User Registered Successfully", newUser)
 	helpers.RespondWithJSON(w, http.StatusCreated, response, "User Registered Successfully")
 }
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var loginRequest models.LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&loginRequest)
 	if err != nil {
+		utils.SaveActivityLog("Login Failed - Invalid Request", models.User{})
 		helpers.RespondWithError(w, http.StatusBadRequest, err.Error(), "Invalid request")
 		return
 	}
 
-	users, err := readUsersFromJson()
+	users, err := models.ReadUsersFromJson()
 	if err != nil {
+		utils.SaveActivityLog("Login Failed - Failed to login user", models.User{})
 		helpers.RespondWithError(w, http.StatusInternalServerError, err.Error(), "Failed to login user")
 		return
 	}
@@ -75,12 +87,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		if user.Username == loginRequest.Username {
 			err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginRequest.Password))
 			if err != nil {
+				utils.SaveActivityLog("Login Failed - Invallid Credentials", user)
 				helpers.RespondWithError(w, http.StatusUnauthorized, err.Error(), "Invalid credentials")
 				return
 			}
 
 			token, err := utils.GenerateJWT(user.Username)
 			if err != nil {
+				utils.SaveActivityLog("Login Failed - Failed to generate token", user)
 				helpers.RespondWithError(w, http.StatusInternalServerError, err.Error(), "Failed to generate token")
 				return
 			}
@@ -91,11 +105,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 				Token:    token,
 			}
 
+			utils.SaveActivityLog("Login Successful", user)
 			helpers.RespondWithJSON(w, http.StatusOK, response, "Login successful")
 			return
 		}
 	}
 
+	utils.SaveActivityLog("Login Failed - Invalid Credentials", models.User{})
 	helpers.RespondWithError(w, http.StatusUnauthorized, "Invalid credentials", "Invalid credentials")
 }
 
@@ -105,33 +121,19 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 	err := utils.BlacklistToken(token)
 	if err != nil {
+		utils.SaveActivityLog("Logout Failed - Failed to logout user", models.User{})
 		helpers.RespondWithError(w, http.StatusInternalServerError, err.Error(), "Failed to logout user")
 		return
 	}
 
+	username, _ := utils.GetUsernameFromToken(token)
+	user, err := models.GetUserByUsername(username)
+	if err != nil {
+		utils.SaveActivityLog("Logout Failed - User not found", models.User{})
+		helpers.RespondWithError(w, http.StatusNotFound, err.Error(), "User not found")
+		return
+	}
+
+	utils.SaveActivityLog("Logout Successful", user)
 	helpers.RespondWithJSON(w, http.StatusOK, nil, "Logout successful")
-}
-
-func readUsersFromJson() (models.UserCollection, error) {
-	file, err := os.ReadFile("storage/users.json")
-	if err != nil {
-		return models.UserCollection{}, err
-	}
-
-	var users models.UserCollection
-	err = json.Unmarshal(file, &users)
-	if err != nil {
-		return models.UserCollection{}, err
-	}
-
-	return users, nil
-}
-
-func saveUsersToJson(users models.UserCollection) error {
-	data, err := json.MarshalIndent(users, "", " ")
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile("storage/users.json", data, 0644)
 }

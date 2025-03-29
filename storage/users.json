@@ -3,7 +3,26 @@
   {
    "username": "admin",
    "name": "Admin",
-   "password": "$2a$10$ziWf0stqkiiXo/8IwzMqcOmbmjYAfWL531oR/pv5m4tYwiLc6Gz7C"
+   "password": "$2a$10$djaD5OfUPtcMVd4CMdFRVOUbDgQya5W.l7uMVoYxwLFKG/Z2Dspbe",
+   "balance": 89000
+  },
+  {
+   "username": "admin2",
+   "name": "Admin",
+   "password": "$2a$10$tvWbEXR2KoyCqyKcL9kdQu3tiqrk7CHpiyBXZscNhfkZ81c1ieV4e",
+   "balance": 27000
+  },
+  {
+   "username": "admin3",
+   "name": "Admin",
+   "password": "$2a$10$0JaY..1lSwUezQUNvjrAl.AGsMMMG.CpdbxLXFm0EUN2/H/ciIQme",
+   "balance": 0
+  },
+  {
+   "username": "come",
+   "name": "Admin",
+   "password": "$2a$10$SrOWOBVmuXtw1AzNYG87duewTJtdFWILhlJ48K.D8fnt0SLoyDIiW",
+   "balance": 0
   }
  ]
 }
