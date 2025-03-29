@@ -26,16 +26,16 @@ func PaymentHandler(w http.ResponseWriter, r *http.Request) {
 
 	username, _ := utils.GetUsernameFromToken(token)
 
-	if username == paymentRequest.Username {
-		utils.SaveActivityLog("Payment Failed - User tried to transfer to their own account", models.User{})
-		helpers.RespondWithError(w, http.StatusBadRequest, "You cannot transfer to your own account", "You cannot transfer to your own account")
-		return
-	}
-
 	user, err := models.GetUserByUsername(username)
 	if err != nil {
 		utils.SaveActivityLog("Payment Failed - User not found", models.User{})
 		helpers.RespondWithError(w, http.StatusNotFound, err.Error(), "User Not Found")
+		return
+	}
+
+	if username == paymentRequest.Username {
+		utils.SaveActivityLog("Payment Failed - User tried to transfer to their own account", user)
+		helpers.RespondWithError(w, http.StatusBadRequest, "You cannot transfer to your own account", "You cannot transfer to your own account")
 		return
 	}
 
@@ -85,5 +85,5 @@ func PaymentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.SaveActivityLog("Payment Successful", user)
-	helpers.RespondWithJSON(w, http.StatusOK, newPayment, "Payment successful")
+	helpers.RespondWithJSON(w, http.StatusCreated, newPayment, "Payment successful")
 }

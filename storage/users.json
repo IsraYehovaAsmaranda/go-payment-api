@@ -4,13 +4,13 @@
    "username": "admin",
    "name": "Admin",
    "password": "$2a$10$djaD5OfUPtcMVd4CMdFRVOUbDgQya5W.l7uMVoYxwLFKG/Z2Dspbe",
-   "balance": 89000
+   "balance": 74000
   },
   {
    "username": "admin2",
    "name": "Admin",
    "password": "$2a$10$tvWbEXR2KoyCqyKcL9kdQu3tiqrk7CHpiyBXZscNhfkZ81c1ieV4e",
-   "balance": 27000
+   "balance": 42000
   },
   {
    "username": "admin3",
