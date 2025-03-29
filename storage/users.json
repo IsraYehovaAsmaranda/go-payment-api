@@ -1,39 +1,9 @@
 {
  "data": [
   {
-   "username": "isra",
-   "name": "Isra Yehova Asmaranda",
-   "password": "123"
-  },
-  {
-   "username": "slackerino",
-   "name": "Slackerino Dummerino",
-   "password": "123"
-  },
-  {
    "username": "admin",
    "name": "Admin",
-   "password": "admin"
-  },
-  {
-   "username": "user",
-   "name": "User",
-   "password": "user"
-  },
-  {
-   "username": "bagus",
-   "name": "Bagus",
-   "password": "1000"
-  },
-  {
-   "username": "eksis",
-   "name": "Eksis",
-   "password": "1000"
-  },
-  {
-   "username": "eksis1",
-   "name": "Eksis",
-   "password": "1000"
+   "password": "$2a$10$ziWf0stqkiiXo/8IwzMqcOmbmjYAfWL531oR/pv5m4tYwiLc6Gz7C"
   }
  ]
 }

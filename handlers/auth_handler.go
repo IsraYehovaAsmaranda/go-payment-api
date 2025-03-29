@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/IsraYehovaAsmaranda/go-payment-api/helpers"
 	"github.com/IsraYehovaAsmaranda/go-payment-api/models"
 	"github.com/IsraYehovaAsmaranda/go-payment-api/utils"
@@ -32,6 +34,14 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
+	if err != nil {
+		helpers.RespondWithError(w, http.StatusInternalServerError, err.Error(), "Failed to register user")
+		return
+	}
+
+	newUser.Password = string(hashedPassword)
+
 	users.Data = append(users.Data, newUser)
 
 	err = saveUsersToJson(users)
@@ -51,6 +61,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&loginRequest)
 	if err != nil {
 		helpers.RespondWithError(w, http.StatusBadRequest, err.Error(), "Invalid request")
+		return
 	}
 
 	users, err := readUsersFromJson()
@@ -60,7 +71,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, user := range users.Data {
-		if user.Username == loginRequest.Username && user.Password == loginRequest.Password {
+		if user.Username == loginRequest.Username {
+			err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginRequest.Password))
+			if err != nil {
+				helpers.RespondWithError(w, http.StatusUnauthorized, err.Error(), "Invalid credentials")
+				return
+			}
+
 			token, err := utils.GenerateJWT(user.Username)
 			if err != nil {
 				helpers.RespondWithError(w, http.StatusInternalServerError, err.Error(), "Failed to generate token")
