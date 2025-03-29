@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -96,6 +97,19 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helpers.RespondWithError(w, http.StatusUnauthorized, "Invalid credentials", "Invalid credentials")
+}
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	err := utils.BlacklistToken(token)
+	if err != nil {
+		helpers.RespondWithError(w, http.StatusInternalServerError, err.Error(), "Failed to logout user")
+		return
+	}
+
+	helpers.RespondWithJSON(w, http.StatusOK, nil, "Logout successful")
 }
 
 func readUsersFromJson() (models.UserCollection, error) {
